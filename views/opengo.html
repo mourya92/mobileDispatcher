@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>First Respnder</title>
+
+    <meta name="description" content="Source code generated using layoutit.com">
+    <meta name="author" content="LayoutIt!">
+
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+
+	
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+	<script src="/socket.io/socket.io.js"></script>
+	
+	<script>
+			
+				 var socket = io();
+				 
+				 socket.emit('storeInfo', 'dispatcher'); 
+				 
+				 socket.on('openGoApp', function (response)
+				 {
+						console.log(JSON.stringify(response));
+						document.getElementById('hidden_div').style.display = "block";
+						window.open("https://45.33.29.206:9001/test");
+						var frame = document.createElement('iframe');
+						frame.src = 'djivideo://';
+						frame.style.display = 'none';
+						document.body.appendChild(frame);
+						//if (JSON.parse(response).obj.trigger == "openGo"){
+//							window.open('https://45.33.29.206:9001/test', '_blank');
+						//}
+				 });
+				
+	</script>
+	
+	<h1>
+	Hello World!
+	</h1>
+	<div id="hidden_div" style="display: none;">
+	<a onClick="javascript:try_to_open_app();" href="djivideo://">App name</a>	
+	</div>
+	
+	
+    <script src="js/jquery.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/scripts.js"></script>
+	<script src="js/chart.js"></script>
+  </body>
+</html>

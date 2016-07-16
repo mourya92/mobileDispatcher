@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="apple-mobile-web-app-capable" />
+
+    <title>First Respnder</title>
+
+    <meta name="description" content="Source code generated using layoutit.com">
+    <meta name="author" content="LayoutIt!">
+
+    <link href="../../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../../css/style.css" rel="stylesheet">
+
+	<style>
+		
+	   html, body {height: 100%;}
+
+	   #content, .container-fluid, .span9
+	   {
+	   	 border: 1px solid #000;
+	   	 overflow-y:auto;
+	   	 height:100%;
+	   }​
+	  
+
+	</style>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+	<script src="/socket.io/socket.io.js"></script>
+	<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDSQD7Lu-YH5kSqmTbfebM8U4zHYDQ1q-0"> </script>
+	<script src="https://www.webrtc-experiment.com/RecordRTC.js"> </script>
+	
+	<script>
+	</script>
+	
+	<script>	
+	</script>
+	
+  </head>
+  <body>
+
+
+<div class="container-fluid">
+	<div class="row">
+		<div class="col-md-12">
+			<div class="row">
+				<div class="col-md-8">
+					<h3>
+						Your Device !
+					</h3>
+				</div>
+				<div class="col-md-4">
+					<dl>
+						<dt id="deviceName">
+							Device Name : Test
+						</dt>
+						<dd id="locationName">
+							<span>Location : 2252 Dahlia Way, TX 75080</span>
+						</dd>
+						
+					</dl>
+				</div>
+			</div>
+			<ul class="nav nav-tabs">
+				<li id="tab_devID">
+					<a id="devID" style="padding-left: 5px; width: 67px;">Devices</a>
+				</li>
+				<li id="tab_chartID">
+					<a id="chartID">Chart</a>
+				</li>
+				<li id="tab_statsID">
+					<a id="statsID"  style="width: 50px; padding-left: 5px;">Stats</a>
+				</li>
+				<li id="tab_trigID" >
+					<a id="trigID" style=" width: 72px; padding-left: 5px;">Triggers</a>
+				</li>
+				<li id="tab_teamID">
+					<a id="teamID" style="padding-left: 5px;">Team</a>
+				</li>
+			</ul>
+			<div class="row">
+				<div class="col-md-12" style="height:500px" id="mainDisplay">
+					<svg class="svg" id="svg" style="height:500px; width: 100%;"> </svg>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+	
+	<div class="panel-group" id="Collapse" hidden="true">
+		<div class="panel panel-default" >
+			<div class="panel-heading collapsed" data-toggle="collapse" data-parent="#Collapse" href="#panel-element-881408" onClick="dispTable('avg')" >
+				<a class="panel-title" >Average</a>
+			</div>
+			<div id="panel-element-881408" class="panel-collapse collapse">
+				<div class="panel-body" id="avgID">	
+				</div>
+			</div>
+		</div>
+		<div class="panel panel-default">
+			<div class="panel-heading collapsed" data-toggle="collapse" data-parent="#Collapse" href="#panel-element-664743" onClick="dispTable('min')" >
+				<a class="panel-title" >Minimum</a>
+			</div>
+			<div id="panel-element-664743" class="panel-collapse collapse">
+				<div class="panel-body" id="minID">
+				
+				</div>
+			</div>
+		</div>
+		<div class="panel panel-default">
+			<div class="panel-heading collapsed" data-toggle="collapse" data-parent="#Collapse" href="#panel-element-881409" onClick="dispTable('max')" >
+				<a class="panel-title" >Maximum</a>
+			</div>
+			<div id="panel-element-881409" class="panel-collapse collapse">
+				<div class="panel-body" id="maxID">
+					
+				</div>
+			</div>
+		</div>	
+	
+	</div>
+	
+	<div class="container-fluid"  hidden="true">
+		<div class="row">
+			<div class="col-md-12" id="Chart">
+				<svg class="svg" id="svgChart" style="height:500px ; width: 100%;"> </svg>
+			</div>
+		</div>
+	</div>
+	
+	<!----- Start of Google Maps ----->
+	<div class="container-fluid" id="Team" hidden="true">
+		<div class="row">
+			<div class="col-md-12">
+				<div id="googleMap" style="width:1150px;height:1900px;"></div>
+			</div>
+		</div>
+	</div>
+	<!----- End of Google Maps ----->
+
+	<div class="modal fade" id="myModal" role="dialog">
+	    <div class="modal-dialog modal-dialog-center">
+	    	<!-- Modal content-->
+	    		<div class="modal-content" style="width: 342px; top: 120px;">
+	    			<div class="modal-header">
+	    				<button type="button" class="close" data-dismiss="modal">&times;</button>
+	    				<h4 class="modal-title" id="trig_Info"></h4>
+	    			</div>
+	    			<div class="modal-body">
+	    				<p id="trig_Body"></p>
+	    			</div>
+	    			<div class="modal-footer">
+	    				
+	    				<a  class="btn btn-primary btn-sm" onclick="takeAction(this.id)" type="button" id="smsButton" data-dismiss="modal" >SMS</a>
+	    				<a  class="btn btn-primary btn-sm" onclick="takeAction(this.id)" type="button" id="pttButton" data-dismiss="modal" >PTT</a> 
+						<a  class="btn btn-primary btn-sm" onclick="takeAction(this.id)" type="button" id="ptxButton" data-dismiss="modal" >PTX</a>
+						<a  class="btn btn-primary btn-sm" onclick="takeAction(this.id)" type="button" id="droneButton" data-dismiss="modal" >Drone</a>
+	    			
+	    			</div>
+	    		</div>
+	    </div>
+    </div>
+	
+		<div class="modal fade" id="myModalResp" role="dialog">
+	    <div class="modal-dialog modal-dialog-center">
+	    	<!-- Modal content-->
+	    		<div class="modal-content" style="width: 342px; top: 120px;">
+	    			<div class="modal-header">
+	    				<button type="button" class="close" data-dismiss="modal">&times;</button>
+	    				<h4 class="modal-title" id="trigResp_Info"></h4>
+	    			</div>
+	    			<div class="modal-body">
+	    				<p id="trigResp_Body"></p>
+	    			</div>
+	    			<div class="modal-footer">
+						<a  class="btn btn-primary btn-sm" onclick="takeAction(this.id)" type="button" id="vcButton" data-dismiss="modal" >Video Call</a>    			
+	    			</div>
+	    		</div>
+	    </div>
+    </div>
+	
+	<div class="modal fade" id="myModal_PTT" role="dialog" width="350">
+		<div class="modal-dialog modal-dialog-center">
+			<!-- Modal content-->
+				<div class="modal-content" style="bottom: 0px;top: 500px;width: 342px;">
+					<div class="modal-body" style="height: 430px;width: 350px;">
+						<h5 class="modal-title" id="ptt_Info"> Kodiak PTT Call </h5>
+						<iframe width="310" height="380" scrolling="no" name="ptt" id="pttiframe" src=""></iframe>
+					</div>
+					<div class="modal-footer" style="height: 61px;">
+						<button class="btn  pull-left btn-primary btn-md" onclick="showPreview()" style="width: 101px;">PTX</button>
+	    				<button class="btn  pull-right btn-primary btn-md" onclick="ptt_closeOtherEnd()" data-dismiss="modal">Close PTT</button> 
+					</div>
+				</div>
+		</div>
+	</div>
+	
+
+				
+	<div class="modal fade" id="VCModal" role="dialog" width="350">
+	    <div class="modal-dialog modal-dialog-center">
+	    	<!-- Modal content-->
+	    		<div class="modal-content">
+	    			<div class="modal-header">
+	    				<button type="button" class="close" data-dismiss="modal">&times;</button>
+	    				<h4 class="modal-title" id="VCModal_Info"> ATT WebRTC Call </h4>
+	    			</div>
+	    			<div class="modal-body">
+						<p> Please click continue to make video call</p>
+						<p id="VC_Orig"></p>
+						<p id="VC_Term"></p>
+	    			</div>
+	    			<div class="modal-footer">
+	    				<button type="button" class="btn btn-default" onClick="startVideoCall()">Continue</button>
+						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+	    			</div>
+	    		</div>
+	    </div>
+    </div>
+	
+	<div class="modal fade" id="myModalDispDrone" role="dialog">
+	    <div class="modal-dialog modal-dialog-center">
+	    	<!-- Modal content-->
+	    		<div class="modal-content" style="width: 342px; top: 120px;">
+	    			<div class="modal-header">
+	    				<button type="button" class="close" data-dismiss="modal">&times;</button>
+	    				<h4 class="modal-title" id="myModalDispDrone_Info"></h4>
+	    			</div>
+	    			<div class="modal-body">
+	    				<p id="myModalDispDrone_Body"></p>
+	    			</div>
+	    			<div class="modal-footer">
+						<a  class="btn btn-primary btn-block" onclick="takeAction(this.id)" type="button" id="droneButton" data-dismiss="modal" disabled>Dispatch Drone + Stream</a>	    			
+	    			</div>
+	    		</div>
+	    </div>
+    </div>
+	
+	<div class="modal fade" id="DroneModal" role="dialog" width="350">
+	    <div class="modal-dialog modal-dialog-center">
+	    	<!-- Modal content-->
+	    		<div class="modal-content">
+	    			<div class="modal-header">
+	    				<button type="button" class="close" data-dismiss="modal">&times;</button>
+	    				<h4 class="modal-title" id="VCModal_Info"> Drone Live Stream </h4>
+	    			</div>
+	    			<div class="modal-body">
+						<p> Please click continue to Stream Drone Video</p>
+	    			</div>
+	    			<div class="modal-footer">
+						<button type="button" class="btn btn-default" onClick="startDroneStream()">Continue</button>
+						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+	    			</div>
+	    		</div>
+	    </div>
+    </div>
+	
+	<div class="modal fade" id="LiveDisplay" role="dialog">
+	    <div class="modal-dialog modal-dialog-center">
+	    	<!-- Modal content-->
+	    		<div class="modal-content" style="bottom: 90px;">
+	    			<div class="modal-header">
+	    				<button type="button" class="close" data-dismiss="modal">&times;</button>
+	    				<h4 class="modal-title" id="LiveModal_Info"> Drone Live Stream </h4>
+	    			</div>
+	    			<div class="modal-body">
+						<iframe width="550" height="500"  src="https://www.youtube.com/embed/qWTNTdv2xyc" frameborder="0" allowfullscreen></iframe>
+	    			</div>
+	    			<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+	    			</div>
+	    		</div>
+	    </div>
+    </div>
+	
+			<!-- ========================== Bootstrap -> Main UI ====================== -->
+	        <div class="modal fade" id="myModal_PTX" role="dialog" width="350">
+	            <div class="modal-dialog modal-dialog-center">
+	            	<!-- Modal content-->
+	            		<div class="modal-content" style="bottom: 0px;top: 500px;width: 342px;">
+	            			<div class="modal-body" id="videoBody" style="height: 430px;width: 350px;">
+	        					<video id="video" style="height: 400px; width: 300px;" autoplay></video> 
+	            			</div>
+	            			<div class="modal-footer" style="height: 81px;">
+								 <button type="button" class="btn btn-block btn-primary" data-dismiss="modal" style="height:60px;" align="right" onClick="closePTX()">Close PTX</button>
+	            			</div>
+	            		</div>
+	            </div>
+            </div>
+			
+			<!-- ========================== Bootstrap -> VideoPlay UI ====================== -->
+	        <div class="modal fade" id="myModal_PTX_Play" role="dialog" width="350">
+	            <div class="modal-dialog modal-dialog-center">
+	            	<!-- Modal content-->
+	            		<div class="modal-content" style="bottom: 0px;top: 500px;width: 342px;">
+	            			<div class="modal-body" id="videoBody" style="height: 430px;width: 350px;">
+	        					<video id="video_Play" style="height: 400px;width: 300px;" controls="controls" autobuffer="autobuffer" autoplay>
+								</video> 
+	            			</div>
+	            			<div class="modal-footer"  style="height: 90px;">
+								 <button type="button" class="btn btn-block btn-primary" data-dismiss="modal" style="height:60px;" align="right" >Close Video</button>
+	            			</div>
+	            		</div>
+	            </div>
+            </div>
+			
+				<!-- ========================== Bootstrap -> Photo Display UI ====================== -->
+	        <div class="modal fade" id="myModal_PTX_Show" role="dialog" width="350">
+	            <div class="modal-dialog modal-dialog-center">
+	            	<!-- Modal content-->
+	            		<div class="modal-content" style="bottom: 0px;top: 500px;width: 342px;">
+	            			<div class="modal-body" id="photoBody" style="height: 430px;width: 350px;">
+	        					<video id="photo_Show" style="height: 400px; width: 300px;">
+								</video> 
+	            			</div>
+	            			<div class="modal-footer" style="height: 90px;">
+								 <button type="button" class="btn btn-block btn-primary" data-dismiss="modal" style="height: 60px;" align="right">Close Picture</button>
+	            			</div>
+	            		</div>
+	            </div>
+            </div>
+			
+    <script src="../../js/jquery.min.js"></script>
+    <script src="../../js/bootstrap.min.js"></script>
+    <script src="../../js/scripts.js"></script>
+	<script src="../../js/chart.js"></script>
+	<script src="../../js/main_dispatcher.js"></script>
+  </body>
+</html>

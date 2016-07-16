@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+<meta charset="UTF-8">
+</head>
+<body>
+<header>Login using Virtual Number</header>
+
+<!-- HTML will go here -->
+<p>
+<button id="loginButton" onClick="onLoginClick()" >Login</button>
+<input id="loginSessionResult" size="60">
+<button id="logoutButton" onClick="logout()" >Logout</button>
+
+<input type="text" id="callToInput" placeholder="Account ID/Telephone" hidden>
+
+<button id="makeACallButton" onclick="makeCall('audio', 'localA', 'remoteA')" hidden>Make Audio Call</button>
+<button id="makeVCallButton" onclick="makeCall('video', 'localV', 'remoteV')" hidden>Make Video Call</button>
+<button id="answerACallButton" onclick="answerCall('audio', 'localA', 'remoteA')" hidden>Answer Audio Call</button>
+<button id="answerVCallButton" onclick="answerCall('video', 'localV', 'remoteV')" hidden>Answer Video Call</button>
+<button id="rejectCallButton" onclick="rejectCall()" hidden>Reject Call</button>
+<button id="hangupCallButton" onclick="hangUpCall()" hidden>Hangup Call</button>
+
+
+<audio id="localA" style="display:none"></audio>
+<audio id="remoteA" style="display:none"></audio>
+
+<video id="localV" style="width:320px;">
+<video id="remoteV" style="width:320px;">
+
+
+<input id="errorMessage" value="There is an error. Check console log for details" hidden size="60">
+</p>
+
+<!-- JavaScript will go here -->
+
+<script type ="text/javascript" src="/js/ewebrtc-sdk.min.js"></script>
+<script type="text/javascript">
+
+var phone, E911_AddressID, Final_Token, accessToken, e911Data, tokenScope, myDHS, myDHSURL = 'https://45.33.29.206:9001';
+var randNo = <%- JSON.stringify(randNo) %>;
+
+//Get DHS Configuration Information
+var xhrConfig = new XMLHttpRequest();
+xhrConfig.open('GET', myDHSURL + "/config/");
+xhrConfig.onreadystatechange = function() {
+    if (xhrConfig.readyState == 4) {
+        if (xhrConfig.status == 200) {
+            console.log(xhrConfig.responseText);
+            myDHS = JSON.parse(xhrConfig.responseText);
+            createPhoneObject();
+        } else {
+            console.log(xhrConfig.responseText);
+        }
+    }
+}
+xhrConfig.send();
+
+function createPhoneObject() {
+    phone = ATT.rtc.Phone.getPhone();
+    registerEvents();
+	
+    loginButton.hidden = false;
+}
+
+function registerEvents() {
+    phone.on('error', onError);
+    phone.on('session:ready', onSessionReady);
+    phone.on('session:disconnected', onSessionDisconnected);
+	phone.on('call:incoming', onIncomingCall);
+    phone.on('call:connected', onConnectedCall);
+	phone.on('call:disconnected', onDisconnectedCall);
+    phone.on('call:rejected', onRejectedCall);
+}
+
+function onError(data) {
+    console.log(data.error);
+    //loginButton.disabled = true;
+    errorMessage.hidden = false;
+}
+
+function onSessionReady(data) {
+    loginButton.disabled = true;
+    logoutButton.hidden = false;
+    loginSessionResult.value = "Session ID ".concat(data.sessionId);
+	callToInput.hidden = false;
+    makeACallButton.hidden = false;
+	makeVCallButton.hidden = false;
+}
+
+function onSessionDisconnected() {
+    logoutButton.hidden = true;
+    window.location ="step10-login-advanced.html";
+	callToInput.hidden = true;
+    makeACallButton.hidden = true;
+	makeVCallButton.hidden = true;
+}
+
+function onIncomingCall () {
+    makeACallButton.hidden = true;
+	makeVCallButton.hidden = true;
+    answerACallButton.hidden = false;
+	answerVCallButton.hidden = false;
+	rejectCallButton.hidden = false;
+}
+
+function onConnectedCall () {
+    callToInput.value = "" ;
+    makeACallButton.hidden = true;
+	makeVCallButton.hidden = true; 
+    answerACallButton.hidden = true;
+	answerVCallButton.hidden = true;
+	hangupCallButton.hidden = false;
+    rejectCallButton.hidden = true;
+}
+
+function makeCall(callType, localEle, remoteEle) {
+    phone.dial({
+       destination: phone.cleanPhoneNumber(callToInput.value),
+       mediaType: callType,
+       localMedia: document.getElementById(localEle),
+       remoteMedia: document.getElementById(remoteEle)
+    });
+}
+ 
+function answerCall(callType, localEle, remoteEle) {
+    phone.answer({
+	   mediaType: callType,
+       localMedia: document.getElementById(localEle),
+       remoteMedia: document.getElementById(remoteEle)
+    });
+}  
+
+function onDisconnectedCall () {
+    makeACallButton.hidden = false;
+	makeVCallButton.hidden = false;
+    rejectCallButton.hidden = true;
+    answerACallButton.hidden = true;
+	answerVCallButton.hidden = true; 
+    hangupCallButton.hidden = true;
+}        
+ 
+function onRejectedCall () {
+    makeACallButton.hidden = false;
+	makeVCallButton.hidden = false;
+    rejectCallButton.hidden = true;
+    answerACallButton.hidden = true;
+	answerVCallButton.hidden = true;
+}        
+            
+function hangUpCall() {
+    phone.hangup ();
+}
+    
+function rejectCall() {
+    phone.reject ();
+}
+
+
+function one911AccessTokenClick() {
+    
+    tokenScope = "E911";
+    return createAccessToken();
+}
+
+function onE911IdClick(E911_Token) {
+   
+    return createE911Id (E911_Token) ;
+}
+
+function createUserAccessTokenClick() {
+   
+    tokenScope = "VIRTUAL_NUMBER";
+    return createAccessToken();
+}
+
+function associateUserAccessTokenClick(userToken) {
+   
+    associateAccessToken(userToken);
+}
+
+function onLoginClick() {
+
+        var E911_Token = one911AccessTokenClick();  
+       
+}
+
+function createAccessToken() {
+    var xhrToken = new XMLHttpRequest();
+    xhrToken.open('POST', myDHS.app_tokens_url);
+    xhrToken.setRequestHeader("Content-Type", "application/json");
+    xhrToken.onreadystatechange = function() {
+        if (xhrToken.readyState == 4) {
+            if (xhrToken.status == 200) {
+                console.log(xhrToken.responseText);
+                accessToken = (JSON.parse(xhrToken.responseText));
+                if (tokenScope == "E911") {
+					console.log(' TOKEN SCOPE : ' + tokenScope);
+					console.log(' GENERATED TOKEN : ' + accessToken.access_token); 					
+					onE911IdClick(accessToken.access_token);
+					
+                } else {
+                   
+                    if (tokenScope != "MOBILE_NUMBER") {
+    
+						console.log(' TOKEN SCOPE : ' + tokenScope);
+						console.log(' GENERATED TOKEN : ' + accessToken.access_token); 
+						Final_Token = accessToken.access_token; 
+						associateUserAccessTokenClick(Final_Token);
+						
+                    } else {
+  
+                    }
+                }
+
+            } else {
+                console.log(xhrToken.responseText);
+            }
+        }
+    }
+    xhrToken.send(JSON.stringify({app_scope: tokenScope, auth_code: ''}));
+}
+
+function createE911Id(E911_Token) {
+    var xhrE911 = new XMLHttpRequest();
+	console.log(' PASSED E911 ACCESS TOKEN : ' + E911_Token);    
+	xhrE911.open('POST', myDHS.app_e911ids_url);
+    xhrE911.setRequestHeader("Content-Type", "application/json");
+    xhrE911.onreadystatechange = function() {
+        if (xhrE911.readyState == 4) {
+            if (xhrE911.status == 200) {
+                console.log(xhrE911.responseText);
+                e911Data = (JSON.parse(xhrE911.responseText));
+
+				console.log(' E911 ADDRESS IDENTIFIER : ' + e911Data.e911Locations.addressIdentifier);
+				E911_AddressID = e911Data.e911Locations.addressIdentifier; 
+				
+				createUserAccessTokenClick();
+				
+                return e911Data.e911Locations.addressIdentifier;
+            } else {
+                console.log(xhrE911.responseText);
+            }
+        }
+    }
+    xhrE911.send(JSON.stringify({
+        token: E911_Token,
+        address: {
+                    first_name: 'ATT',
+                    last_name: 'Inc',
+                    house_number: '16221',
+                    street: 'NE 72nd Way',
+                    unit: '',
+                    city: 'Redmond',
+                    state: 'WA',
+                    zip: '98052'
+        },
+        is_confirmed: 'true'
+    }));
+}
+
+function associateAccessToken(userToken) {
+    phone.associateAccessToken({
+        userId: randNo,
+        token: userToken,
+        success:    function () {
+
+						alert(' ASSOCIATED TOKEN ');
+						login(Final_Token, E911_AddressID); 
+        },
+        error: onError
+        })
+}
+
+function login(Token, AddressID) {
+    phone.login({token: Token, e911Id: AddressID});
+}
+
+function logout() {
+    phone.logout();
+}
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>First Responders</title>
+
+    <meta name="description" content="Source code generated using layoutit.com">
+    <meta name="author" content="LayoutIt!">
+
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/style.css" rel="stylesheet">
+
+  <style>
+	.list-group-item{   
+		height: 62px;
+	}
+  </style>
+  
+  				
+    <script src="../js/jquery.min.js"></script>
+    <script src="../js/bootstrap.min.js"></script>
+    <script src="../js/scripts.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+	<script src="/socket.io/socket.io.js"></script>
+		
+	<script>
+		
+		var socket = io();	
+		
+		var Iam = window.location.pathname.split("/")[2];
+		var str_dispList = ""; 
+		
+		socket.emit('getDevices', Iam);
+		
+		socket.on('trggerUpdates', function(value)
+		{
+			
+		});
+		
+		socket.on('showDevices', function(device_List, ar_trigger_Cnt)
+		{	
+			console.log(device_List);
+			for(var device in device_List)
+			{
+				console.log(" DEVICE  : " + device_List[device].name);
+				
+				str_dispList = str_dispList + '<div class="list-group-item" onClick="showDevicePage(\'' + device_List[device].name + '\')">'; 
+				
+				if(device_List[device].name.indexOf("Watch")!=-1)
+					str_dispList = str_dispList + '<img src="../watch.png"/>';
+				if(device_List[device].name.indexOf("Fire")!=-1)
+					str_dispList = str_dispList + '<img src="../fire.png"/>';
+				if(device_List[device].name.indexOf("Hiker")!=-1)
+					str_dispList = str_dispList + '<img src="../climb.png"/>';
+				if(device_List[device].name.indexOf("Helmet")!=-1)
+					str_dispList = str_dispList + '<img src="../helmet.png"/>';
+				
+				str_dispList = str_dispList + '<span class="badge" id="span_"'+ device_List[device].name + '>15</span>'; 
+				str_dispList = str_dispList + '<dt id="'+ device_List[device].name + '" style="display:inline">' + device_List[device].name + '</dt>'; 
+				str_dispList = str_dispList + '<p> location : ' + device_List[device].location.name + '</p>'; 
+				str_dispList = str_dispList + '</div>';
+			};
+			
+			
+			document.getElementById("device_list").innerHTML = str_dispList; 
+		});
+		
+		var showDevicePage = function(dev_Name)
+		{	
+		
+			if(Iam !='dispatcher')
+				window.location='https://45.33.29.206:9001/m2x/' + dev_Name + '/' + Iam;
+			else
+				window.location='https://45.33.29.206:9001/m2x/' + dev_Name + '/dispatcher';
+		}
+		
+	</script>
+    <body>
+    
+        <div class="container-fluid">
+        	<div class="row">
+        		<div class="col-md-12">
+        			<div class="col-md-8">
+        				<h3>
+        					First Responders !
+        				</h3>
+        			</div>
+        			<div class="col-md-4">
+        				<dl>
+        					<dt id="deviceName">
+        						Responder : Bob
+        					</dt>					
+        				</dl>
+        			</div>
+        			<div class="list-group" id="device_list">
+        			</div>
+        		</div>
+        	</div>
+        </div>
+    
+    	<div class="modal fade" id="loadModal" role="dialog">
+    		<div class="modal-dialog modal-dialog-center">
+    			<!-- Modal content-->
+    			<img src='/gears.gif'  style="position: absolute; left:35%; top:50%;"></img>
+    		</div>
+    	</div>
+	
+    			
+    </body>
+  
+</head> 
+</html>

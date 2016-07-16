@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="apple-mobile-web-app-capable" />
+
+    <title>First Respnder</title>
+
+    <meta name="description" content="Source code generated using layoutit.com">
+    <meta name="author" content="LayoutIt!">
+
+    <link href="../../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../../css/style.css" rel="stylesheet">
+
+	<style>
+		
+	   html, body {height: 100%;}
+
+	   #content, .container-fluid, .span9
+	   {
+	   	 border: 1px solid #000;
+	   	 overflow-y:auto;
+	   	 height:100%;
+	   }?
+
+	</style>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+	<script src="/socket.io/socket.io.js"></script>
+	<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDSQD7Lu-YH5kSqmTbfebM8U4zHYDQ1q-0"> </script>
+	<script src="https://www.webrtc-experiment.com/RecordRTC.js"> </script>
+	
+	<script>
+	
+			
+		 var socket = io();
+		 var Iam = window.location.pathname.split("/")[2];
+		 
+		 socket.emit('storeInfo', {"device_name":'All Devices',"clnt_name":"drone"}); 
+			
+		 socket.on('storeInfo', function(msg)
+			{					
+				console.log("Hi " + msg + " From Server");
+			});
+		
+		 socket.on('alertForDrone', function(msg)
+			{					
+				console.log(msg);
+
+				window.location="djivideo://trwet";
+	
+				
+			});
+			
+		 var device_Name; 
+		 var count =0; 
+		 var table_Title= "";
+		 var max_HTML = "";
+		 var min_HTML = "";
+		 var count_HTML = "";
+		 var avg_HTML = "";
+		 var ar_ChartDetails ={}; 
+		 var trigger_clnt_Info={}; 
+		 var cameraResources=[]; 
+	
+			
+		$(document).ready(function(){
+			
+				loadMap();
+		});
+			//============================================ MAPS LOGIC START =================================
+			var alerttype;
+			var map;
+			var marker;
+			var marker_nop;
+			var marker_fresp;
+			var infowindow;
+			var person = ["Collin Creek Mall","Stadium 1","Lewisville Lake","Canyon 1","Downtown Dallas"],latitude = ["33.0131027","32.745942","33.063678","36.08240162","32.7766642"],longitude = ["-96.7099442","-97.0957095","-96.993924","-112.1566772","-96.7969879"]; 
+			var selectedMarker = ""; 
+			
+			
+			
+			
+			var loadMap = function()
+			{
+				var mapProp = { 
+					center:new google.maps.LatLng(32.911348,-96.892687),
+					zoom:12,
+					mapTypeId:google.maps.MapTypeId.ROADMAP
+					};
+					
+				map =new google.maps.Map(document.getElementById("googleMap"),mapProp);
+				
+				if (person[1] == "Stadium 1"){
+					locate(person[0],latitude[0],longitude[0]);
+					locate(person[1],latitude[1],longitude[1]);
+					locate(person[2],latitude[2],longitude[2]);
+					locate(person[4],latitude[4],longitude[4]);
+					}
+				else {
+					if (person[0]== "Collin Creek Mall" || person[0]== "Stadium 1" || person[0]== "Lewisville Lake" || person[0]== "Canyon 1" || person[0]== "Downtown Dallas"){
+							map.setCenter(new google.maps.LatLng(latitude[0],longitude[0]));
+							map.setZoom(10);
+						}
+					for (i=0;i<person.length;i++){
+						locate(person[i],latitude[i],longitude[i]);
+				}
+				}
+				
+				function locate(name,lat,lng){
+				var a = new google.maps.LatLng(lat,lng);
+				var name = name;
+				console.log(name);
+				if (name == "drone"){
+				marker_drone=new google.maps.Marker({
+					position:a,
+					icon: '../../drone.jpg',
+					title: name
+					});
+					
+					marker_drone.setMap(map);
+					
+					infowindow = new google.maps.InfoWindow({
+						content:name
+					});			
+					
+					infowindow.open(map,marker_drone);
+					google.maps.event.addListener(marker_drone,'click',markerDest);
+				}
+				else if (name=="dispatcher"){
+				marker=new google.maps.Marker({
+					position:a,
+					icon: '../../phone.gif',
+					title: name
+					});
+					
+					marker.setMap(map);
+					infowindow = new google.maps.InfoWindow({
+						content:name
+					});			
+					
+					infowindow.open(map,marker);
+					google.maps.event.addListener(marker,'click',markerpopup);
+				}
+				else if (name=="Bob" || name=="Alice"){
+				marker=new google.maps.Marker({
+					position:a,
+					icon: '../../phone.gif',
+					title: name
+					});
+					
+					marker.setMap(map);
+					infowindow = new google.maps.InfoWindow({
+						content:name
+					});			
+					
+					infowindow.open(map,marker);
+					google.maps.event.addListener(marker,'click',markerpopup);
+				}
+				else{
+				marker_Dest=new google.maps.Marker({
+					position:a,
+					icon: '../../fire.png',
+					title: name
+					});
+				if(name == "Downtown Dallas"){
+					marker_Dest.setIcon("../../fire.png");
+				}
+				if(name == "Stadium 1"){
+					marker_Dest.setIcon("../../helmet.png");
+				}
+				if(name == "Lewisville Lake"){
+					marker_Dest.setIcon("../../watch.png");
+				}
+				if(name == "Canyon 1"){
+					marker_Dest.setIcon("../../climb.png");
+				}
+				if(name == "Collin Creek Mall"){
+					marker_Dest.setIcon("../../fire.png");
+				}
+					marker_Dest.setMap(map);
+					
+					infowindow = new google.maps.InfoWindow({
+						content:name
+					});			
+					
+					infowindow.open(map,marker_Dest);
+					google.maps.event.addListener(marker_Dest,'click',markerDest);
+				}				
+				
+				
+			}
+			
+			}
+			
+			
+			function markerpopup(){
+				document.getElementById("smsButton").disabled = false; 
+				document.getElementById("trig_Info").innerHTML = alerttype; 
+				$("#myModal").modal('toggle');
+			}
+			
+			function markerDest(){
+				document.getElementById("smsButton").disabled = false; 
+				document.getElementById("myModalDispDrone_Info").innerHTML = 'Incident Location'; 
+				document.getElementById("myModalDispDrone_Body").innerHTML = trigger_clnt_Info.trgObj.location.name 
+				$("#myModalDispDrone").modal('toggle');
+			}
+			
+			
+			
+	
+	//============================================ MAPS LOGIC END=================================
+		
+		
+	</script>
+	
+  </head>
+  <body>
+
+
+    <div class="container-fluid">
+    	<div class="row">
+    		<div class="col-md-12">
+    			<div class="row">
+    				<div class="col-md-8">
+    					<h3>
+    						Drone Dispatcher !
+    					</h3>
+    				</div>
+    			</div>			
+    			<div class="row">
+    				<div class="col-md-12" style="height:500px" id="mainDisplay">
+    						<div id="googleMap" style="width:1150px;height:1900px;"></div>
+    				</div>
+    			</div>
+    		</div>
+    	</div>
+    </div>
+	
+	<div class="modal fade" id="myModalDispDrone" role="dialog">
+	    <div class="modal-dialog modal-dialog-center">
+	    	<!-- Modal content-->
+	    		<div class="modal-content" style="width: 342px; top: 120px;">
+	    			<div class="modal-header">
+	    				<button type="button" class="close" data-dismiss="modal">&times;</button>
+	    				<h4 class="modal-title" id="myModalDispDrone_Info"></h4>
+	    			</div>
+	    			<div class="modal-body">
+	    				<p id="myModalDispDrone_Body"></p>
+	    			</div>
+	    			<div class="modal-footer">
+						<a  class="btn btn-primary btn-block" onclick="takeAction(this.id)" type="button" id="droneButton" data-dismiss="modal" disabled>Dispatch Drone + Stream</a>	    			
+	    			</div>
+	    		</div>
+	    </div>
+    </div>
+			
+    <script src="../../js/jquery.min.js"></script>
+    <script src="../../js/bootstrap.min.js"></script>
+    <script src="../../js/scripts.js"></script>
+	<script src="../../js/chart.js"></script>
+  </body>
+</html>

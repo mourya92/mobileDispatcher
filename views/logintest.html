@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+	<meta charset="UTF-8">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <title>AT&T WebRTC</title>
+
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+	<link href="/css/4-col-portfolio.css" rel="stylesheet">
+	<link href="/css/styletest.css" rel="stylesheet" type="text/css">
+</head>
+
+<style>
+	.top-buffer { margin-top:20px; }
+	.modal-dialog-center { margin-top: 50%; }	
+	
+	.video-container {
+		position:relative;
+	}
+	.userVideo {
+		height: 28%;
+		width: 40%;
+		float: left;
+		top: 0; 
+		bottom: 0;
+		left: 0;
+		margin-left: 10px;
+		border:5px solid #1E90FF;
+		position: fixed;
+		z-index: 1000; 
+	}
+
+	.peerVideo {
+		height: 100%;
+		width: 95%;
+		float: left;
+		top: 0; 
+		bottom: 0;
+		left: 0;
+		margin-left: 10px;
+		border:5px solid Black;
+		position: fixed;
+	}
+	
+</style>
+  
+  
+<body>
+		<script src="/js/jquery.min.js"></script>
+        <script src="/js/bootstrap.min.js"></script>
+        <script src="/js/scripts.js"></script>       
+        <script type ="text/javascript" src="/js/ewebrtc-sdk.min.js"></script>
+		<script src="/socket.io/socket.io.js"></script>
+		<script type="text/javascript">	
+	
+
+
+			var phone, E911_AddressID, Final_Token, accessToken, e911Data, tokenScope, myDHS, myDHSURL = 'https://45.33.29.206:9001';
+			var origName = <%- JSON.stringify(orig) %>;
+			var term = <%- JSON.stringify(term) %>;
+			var Iam ="";
+			var orig=""; 
+			
+			console.log(origName);
+			console.log(term);
+		
+			if(origName=="dispatcher")
+				orig="vtn:9726194370"
+			if(origName=="Alice" || orig=="Bob")
+				orig="vtn:9726194369";
+			
+			console.log(orig);
+			console.log(term);
+		
+		
+			//Get DHS Configuration Information
+			var xhrConfig = new XMLHttpRequest();
+			xhrConfig.open('GET', myDHSURL + "/config/");
+			xhrConfig.onreadystatechange = function() {
+				if (xhrConfig.readyState == 4) {
+					if (xhrConfig.status == 200) {
+						console.log(xhrConfig.responseText);
+						myDHS = JSON.parse(xhrConfig.responseText);
+						createPhoneObject();
+						
+					} else {
+						console.log(xhrConfig.responseText);
+					}
+				}
+			}
+			xhrConfig.send();
+			
+			function createPhoneObject() {
+						phone = ATT.rtc.Phone.getPhone();
+						registerEvents();
+						onLoginClick();	
+			}
+			
+			function registerEvents() {
+				phone.on('error', onError);
+				phone.on('session:ready', onSessionReady);
+				phone.on('session:expired', onSessionExpiry);
+				phone.on('session:disconnected', onSessionDisconnected);
+				phone.on('call:incoming', onIncomingCall);
+				phone.on('call:connected', onConnectedCall);
+				phone.on('call:disconnected', onDisconnectedCall);
+				phone.on('call:rejected', onRejectedCall);
+			}
+			
+			function onError(data) {
+				console.log("ERROR DATA : " + JSON.stringify(data));
+				
+				if(data.ErrorCode=="0000")
+				{
+					document.getElementById('infoTitle').innerHTML = "Warning !";
+					document.getElementById('infoBody').innerHTML = "Error during Call, hanging up!";
+					$("#infoModal").modal();
+					
+					setTimeout(function() {
+						$("#infoModal").modal('hide');
+					}, 1000);
+					
+					phone.hangup ();
+				
+				}
+				
+				if(data.ErrorCode=="1000")
+				{
+					document.getElementById('infoTitle').innerHTML = "Warning !";
+					document.getElementById('infoBody').innerHTML = "Error during Login, Relogging in!";
+					$("#infoModal").modal();
+					
+					setTimeout(function() {
+						$("#infoModal").modal('hide');
+					}, 1000);
+					
+					login(Final_Token, E911_AddressID);
+				
+				}
+				
+			}
+			
+			function onSessionReady(data) {
+				console.log("SESSION LOGGED IN " + JSON.stringify(data));
+				$("#loadModal").modal('hide');
+				
+				document.getElementById('infoTitle').innerHTML = "Success !";
+				document.getElementById('infoBody').innerHTML = "Login Success";
+				$("#infoModal").modal();
+				
+				setTimeout(function() {
+					$("#infoModal").modal('hide');
+				}, 1000);
+				
+				
+				
+			}
+			
+			function onSessionExpiry(obj_Exp) {
+			
+				console.log("SESSION EXPIRED (Object) : " + JSON.stringify(obj_Exp));
+				location.reload();
+			}
+			function onSessionDisconnected() {
+				
+				document.getElementById('infoTitle').innerHTML = "Warning !";
+				document.getElementById('infoBody').innerHTML = "Session Disconnected. Please refresh page";
+				$("#infoModal").modal();
+			}
+			
+			function onIncomingCall (obj_INC) {
+			
+				console.log("INCOMING CALL (Object) : " + JSON.stringify(obj_INC));	
+				document.getElementById('callType_INC').innerHTML = (obj_INC.mediaType=="video")?"Video Call..":"Audio Call..";
+				document.getElementById('fromCaller').innerHTML = "Call from : " + obj_INC.from; 
+				$("#myModal").modal();
+				
+			}
+			
+			function onConnectedCall () {
+				
+				console.log("CONNECTED CALL : ");
+				
+			}
+			
+			function makeCall(callType, localEle, remoteEle) {
+				phone.dial({
+				destination: phone.cleanPhoneNumber(term),
+				mediaType: callType,
+				localMedia: document.getElementById(localEle),
+				remoteMedia: document.getElementById(remoteEle)
+				});
+			}
+			
+			function answerCall(callType, localEle, remoteEle) {
+				
+				phone.answer({
+				mediaType: callType,
+				localMedia: document.getElementById(localEle),
+				remoteMedia: document.getElementById(remoteEle)
+				});
+			}  
+			
+			function onDisconnectedCall (obj_DISC) {
+			
+				console.log("DISCONNECT CALL (Object) : " + JSON.stringify(obj_DISC));
+				
+				document.getElementById('infoTitle').innerHTML = "Warning !";
+				document.getElementById('infoBody').innerHTML = "Call Disconnected. Trying again..";
+				$("#infoModal").modal();
+				
+				window.location="https://45.33.29.206:9001/m2x/Test/"+ origName;
+			}        
+			
+			function onRejectedCall () {
+			
+				console.log("REJECTED CALL (Object) : " + JSON.stringify(obj_REJ));
+				
+				document.getElementById('infoTitle').innerHTML = "Warning !";
+				document.getElementById('infoBody').innerHTML = "Call Rejected";
+				$("#infoModal").modal();
+				
+				setTimeout(function() {
+					$("#infoModal").modal('hide');
+				}, 2000);
+				
+			}        
+							
+			function hangUpCall() {
+			
+				phone.hangup();	
+				logout(); 
+				
+				window.location="https://45.33.29.206:9001/m2x/Test/" + origName;
+			}
+				
+			function rejectCall() {
+				phone.reject ();
+			}
+			
+			
+			function one911AccessTokenClick() {
+				
+				tokenScope = "E911";
+				return createAccessToken();
+			}
+			
+			function onE911IdClick(E911_Token) {
+			
+				return createE911Id (E911_Token) ;
+			}
+			
+			function createUserAccessTokenClick() {
+			
+				tokenScope = "VIRTUAL_NUMBER";
+				return createAccessToken();
+			}
+			
+			function associateUserAccessTokenClick(userToken) {
+			
+				associateAccessToken(userToken);
+			}
+			
+			function onLoginClick() {
+			
+					$("#loadModal").modal();
+					var E911_Token = one911AccessTokenClick();  
+				
+			}
+			
+			function createAccessToken() {
+				var xhrToken = new XMLHttpRequest();
+				xhrToken.open('POST', myDHS.app_tokens_url);
+				xhrToken.setRequestHeader("Content-Type", "application/json");
+				xhrToken.onreadystatechange = function() {
+					if (xhrToken.readyState == 4) {
+						if (xhrToken.status == 200) {
+							console.log(xhrToken.responseText);
+							accessToken = (JSON.parse(xhrToken.responseText));
+							if (tokenScope == "E911") {
+								console.log(' TOKEN SCOPE : ' + tokenScope);
+								console.log(' GENERATED TOKEN : ' + accessToken.access_token); 					
+								onE911IdClick(accessToken.access_token);
+								
+							} else {
+							
+								if (tokenScope != "MOBILE_NUMBER") {
+				
+									console.log(' TOKEN SCOPE : ' + tokenScope);
+									console.log(' GENERATED TOKEN : ' + accessToken.access_token); 
+									Final_Token = accessToken.access_token; 
+									associateUserAccessTokenClick(Final_Token);
+									
+								} else {
+			
+								}
+							}
+			
+						} else {
+							console.log(xhrToken.responseText);
+						}
+					}
+				}
+				xhrToken.send(JSON.stringify({app_scope: tokenScope, auth_code: ''}));
+			}
+			
+			function createE911Id(E911_Token) {
+				var xhrE911 = new XMLHttpRequest();
+				console.log(' PASSED E911 ACCESS TOKEN : ' + E911_Token);    
+				xhrE911.open('POST', myDHS.app_e911ids_url);
+				xhrE911.setRequestHeader("Content-Type", "application/json");
+				xhrE911.onreadystatechange = function() {
+					if (xhrE911.readyState == 4) {
+						if (xhrE911.status == 200) {
+							console.log(xhrE911.responseText);
+							e911Data = (JSON.parse(xhrE911.responseText));
+			
+							console.log(' E911 ADDRESS IDENTIFIER : ' + e911Data.e911Locations.addressIdentifier);
+							E911_AddressID = e911Data.e911Locations.addressIdentifier; 
+							
+							createUserAccessTokenClick();
+							
+							return e911Data.e911Locations.addressIdentifier;
+						} else {
+							console.log(xhrE911.responseText);
+							
+							document.getElementById('infoTitle').innerHTML = "Warning !";
+							document.getElementById('infoBody').innerHTML = "Error during Login, Relogging in!";
+							$("#infoModal").modal();
+							
+							setTimeout(function() {
+								$("#infoModal").modal('hide');
+							}, 1000);
+					
+							location.reload();
+						}
+					}
+				}
+				xhrE911.send(JSON.stringify({
+					token: E911_Token,
+					address: {
+								first_name: 'ATT',
+								last_name: 'Inc',
+								house_number: '16221',
+								street: 'NE 72nd Way',
+								unit: '',
+								city: 'Redmond',
+								state: 'WA',
+								zip: '98052'
+					},
+					is_confirmed: 'true'
+				}));
+			}
+			
+			function associateAccessToken(userToken) {
+				phone.associateAccessToken({
+					userId: orig,
+					token: userToken,
+					success:    function () {
+			
+										login(Final_Token, E911_AddressID); 
+							},
+					error: onError
+					})
+			}
+			
+			function login(Token, AddressID) {
+				phone.login({token: Token, e911Id: AddressID});
+			}
+			
+			function logout() {
+				phone.logout();
+			}
+			
+			
+			
+			
+			</script>
+			
+				<!-- ========================== Bootstrap -> LOADING GIF ====================== -->
+			<div class="modal fade" id="loadModal" role="dialog">
+				<div class="modal-dialog modal-dialog-center">
+					<!-- Modal content-->
+					<img src='/gears.gif'  style="position: absolute; left:35%; top:50%;"></img>
+				</div>
+			</div>	
+			
+				<!-- ========================== Bootstrap -> INC CALL ====================== -->
+			<div class="modal fade" id="myModal" role="dialog">
+				<div class="modal-dialog modal-dialog-center">
+					<!-- Modal content-->
+						<div class="modal-content">
+							<div class="modal-header">
+								<button type="button" class="close" data-dismiss="modal">&times;</button>
+								<h4 class="modal-title" id="callType_INC"></h4>
+							</div>
+							<div class="modal-body">
+								<p id="fromCaller"></p>
+							</div>
+							<div class="modal-footer">		
+								<a  class="btn btn-info btn-sm" onclick="answerCall('audio', 'localA', 'remoteA')" type="button" id="answerACallButton" data-dismiss="modal" hidden="true"> Audio </a>
+								<a  class="btn btn-info btn-sm" onclick="answerCall('video', 'localV', 'remoteV')" type="button" id="answerVCallButton" data-dismiss="modal" hidden="true"> Video </a> 
+								<a  class="btn btn-info btn-sm" onclick="rejectCall()" id="rejectCallButton" data-dismiss="modal"> Reject </a>
+							
+							</div>
+						</div>
+				</div>
+			</div>
+
+				<!-- ========================== Bootstrap -> Main UI ====================== -->
+            <div class="container-fluid">
+            	<div class="row">
+            		<div class="col-md-12">
+            			<img align="right" style="padding-top: 20px;padding-right: 50px;" src="/ATT.jpg">
+            			</img>
+            			<div align="center">
+            				<audio id="localA" style="display:none"></audio>
+            				<audio id="remoteA" style="display:none"></audio>
+            				
+            				<div class='video-container'>
+            					<video class='userVideo' id="localV" poster="/no_preview.jpg" autoplay></video>
+            					<video class='peerVideo' id="remoteV" poster="/no_preview.jpg" autoplay></video>
+            				</div>
+            
+            			</div>
+            			<div class="row">
+            				<div class="col-md-4" style="top: 80%; width: 95%; position: fixed" >					 
+            					 <image src='/MakeVideo.png' onclick="makeCall('video', 'localV', 'remoteV')" type="button" id="makeVCallButton" align="left"></image>
+            					 <image src='/EndCall.png' onclick="hangUpCall()" type="button" id="hangupCallButton" align="right"></image>
+            				</div>
+            			</div>
+            		</div>
+            	</div>
+            </div>
+			
+				<!-- ========================== Bootstrap -> Info Modal ====================== -->
+			<div class="modal fade" id="infoModal" role="dialog">
+				<div class="modal-dialog modal-dialog-center">
+					<!-- Modal content-->
+					<div class="modal-content">
+							<div class="modal-header">
+								<button type="button" class="close" data-dismiss="modal">&times;</button>
+								<h4 class="modal-title" id="infoTitle"></h4>
+							</div>
+							<div class="modal-body">
+								<p id="infoBody"></p>
+							</div>
+						</div>
+				</div>
+			</div>
+
+</body>
+</html>
